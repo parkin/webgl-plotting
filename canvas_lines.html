@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js canvas - lines - random</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #cccccc;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			a {
+				color:#0078ff;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="js/three.min.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/stats.min.js"></script>
+<script id="vertShader" type="x-shader/x-vertex">
+void main() {
+    gl_Position = projectionMatrix *
+                  modelViewMatrix * vec4(position, 1.0 );
+}
+</script>
+<script id="fragShader" type="x-shader/x-fragment">
+uniform vec3 color;
+void main(void) {
+    gl_FragColor = vec4(color, 1.0);
+}
+</script>
+
+		<script>
+
+			var mouseX = 0, mouseY = 0,
+
+			windowHalfX = window.innerWidth / 2,
+			windowHalfY = window.innerHeight / 2,
+
+			SEPARATION = 200,
+			AMOUNTX = 10,
+			AMOUNTY = 10,
+
+			camera, scene, renderer,
+			stats;
+
+			var lineSin, uniforms, attributes;
+
+			init();
+			animate();
+
+			function init() {
+
+				var container, separation = 100, amountX = 50, amountY = 50,
+				particles, particle;
+
+				container = document.createElement('div');
+				document.body.appendChild(container);
+
+				var width = 2000;
+				var height = width * window.innerHeight / window.innerWidth;
+
+				//camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 0.1, 2000 );
+				camera.position.z = 800;
+
+				scene = new THREE.Scene();
+
+				renderer = new THREE.WebGLRenderer({antialias: false, precision: "lowp"});
+				renderer.sortObjects = false;
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				// sin curve
+				var geoSin = new THREE.BufferGeometry();
+				var segments = 1000;
+				var positions = new Float32Array( segments * 3 );
+				var max = 200;
+				var min = -200;
+				for ( var i = 0; i < segments; i++) {
+					positions[ i * 3 ] = i * width/segments- width/2;
+					positions[ i * 3 + 1 ] = Math.floor(Math.random()*(max-min+1)+min);
+					positions[ i * 3 + 2 ] = 0.;
+				}
+				geoSin.addAttribute('position', new THREE.BufferAttribute(positions, 3) );
+				geoSin.computeBoundingSphere();
+
+				uniforms = {
+					color: {type: 'c', value: new THREE.Color( 0x00ff00 )}
+				};
+
+				var mat = new THREE.ShaderMaterial({
+					uniforms: uniforms,
+					vertexShader: document.getElementById('vertShader').textContent,
+					fragmentShader: document.getElementById('fragShader').textContent,
+				});
+				mat.linewidth=1;
+				mat.depthTest = false;
+				
+				//var lineSin = new THREE.Line( geoSin, new THREE.LineBasicMaterial({color: 0x00ff00}));
+				var lineSin = new THREE.Line( geoSin, mat, THREE.LineStrip );
+				scene.add(lineSin);
+
+				// axis helper
+				var axisHelper = new THREE.AxisHelper( 200 );
+				scene.add(axisHelper);
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				// stats
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement);
+
+				// look at 0 0 0
+				camera.lookAt( scene.position );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function onDocumentMouseMove(event) {
+
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length > 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+
+				//camera.position.x += ( mouseX - camera.position.x ) * .05;
+				//camera.position.y += ( - mouseY + 200 - camera.position.y ) * .05;
+				//lineSin.rotation.x += 0.04;
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
+</html>
+
